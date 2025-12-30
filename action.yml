@@ -16,6 +16,10 @@ inputs:
     description: 'The base URL of the Ridvay API'
     required: false
     default: 'https://api.ridvay.com'
+  fail-on-severity:
+    description: 'Fail the build if findings meet or exceed this severity (Low, Medium, High, Critical). Set to None to disable.'
+    required: false
+    default: 'None'
 
 runs:
   using: 'node20'
