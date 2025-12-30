@@ -24,6 +24,8 @@ jobs:
         uses: ridvay/security-review@v1
         with:
           ridvay-api-key: ${{ secrets.RIDVAY_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
 ```
 
 ## Inputs

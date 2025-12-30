@@ -1,17 +1,22 @@
 name: 'Ridvay Security Review'
 description: 'Automated security vulnerability analysis for Pull Requests using Ridvay AI'
+author: 'Ridvay'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
 inputs:
   ridvay-api-key:
     description: 'Your Ridvay API Key'
     required: true
   github-token:
-    description: 'GitHub Token (defaults to secrets.GITHUB_TOKEN)'
+    description: 'GitHub Token (e.g., secrets.GITHUB_TOKEN)'
     required: true
-    default: ${{ github.token }}
   ridvay-base-url:
-    description: 'Base URL for Ridvay API'
+    description: 'The base URL of the Ridvay API'
     required: false
     default: 'https://api.ridvay.com'
+
 runs:
   using: 'node20'
   main: 'dist/index.js'
