@@ -4,6 +4,7 @@ const axios = require('axios');
 
 async function run() {
     try {
+        core.info("🛡️ Ridvay Security Guard Action v1.1.0 starting...");
         const ridvayApiKey = core.getInput('ridvay-api-key');
         const githubToken = core.getInput('github-token');
         const ridvayBaseUrl = core.getInput('ridvay-base-url');
