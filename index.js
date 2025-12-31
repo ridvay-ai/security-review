@@ -100,7 +100,7 @@ async function run() {
                 // Add to GitHub Job Summary for better visibility
                 await core.summary
                     .addHeading('🛡️ Ridvay Security Guard Report')
-                    .addText(`Found **${issuesFound}** potential security concern(s).`)
+                    .addRaw(`Found **${issuesFound}** potential security concern(s).`)
                     .addTable([
                         [{ data: 'File', header: true }, { data: 'Line', header: true }, { data: 'Severity', header: true }, { data: 'Finding', header: true }],
                         ...response.data.findings.map(f => [f.file, f.line.toString(), f.severity, f.message])
@@ -114,7 +114,7 @@ async function run() {
                 core.info('✅ No security issues detected.');
                 await core.summary
                     .addHeading('🛡️ Ridvay Security Guard Report')
-                    .addText('✅ No security vulnerabilities detected.')
+                    .addRaw('✅ No security vulnerabilities detected.')
                     .write();
             }
         } else {
