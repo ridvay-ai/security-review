@@ -41539,6 +41539,7 @@ async function run() {
             repo: context.repo.repo,
             pullRequestNumber: prNumber,
             commitSha: context.sha,
+            branch: context.ref,
             baseSha: isPR ? null : (context.payload.before || null),
             headSha: isPR ? null : (context.payload.after || null),
             token: githubToken
@@ -41614,7 +41615,7 @@ async function run() {
                 // Add to GitHub Job Summary for better visibility
                 await core.summary
                     .addHeading('🛡️ Ridvay Security Guard Report')
-                    .addRaw(`Found **${issuesFound}** potential security concern(s).`)
+                    .addText(`Found **${issuesFound}** potential security concern(s).`)
                     .addTable([
                         [{ data: 'File', header: true }, { data: 'Line', header: true }, { data: 'Severity', header: true }, { data: 'Finding', header: true }],
                         ...response.data.findings.map(f => [f.file, f.line.toString(), f.severity, f.message])
@@ -41628,7 +41629,7 @@ async function run() {
                 core.info('✅ No security issues detected.');
                 await core.summary
                     .addHeading('🛡️ Ridvay Security Guard Report')
-                    .addRaw('✅ No security vulnerabilities detected.')
+                    .addText('✅ No security vulnerabilities detected.')
                     .write();
             }
         } else {
