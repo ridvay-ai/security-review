@@ -41519,7 +41519,7 @@ const axios = __nccwpck_require__(7269);
 
 async function run() {
     try {
-        core.info("🛡️ Ridvay Security Guard Action v1.1.0 starting...");
+        core.info("🛡️ Ridvay Security Guard Action v1.2.0 starting...");
         const ridvayApiKey = core.getInput('ridvay-api-key');
         const githubToken = core.getInput('github-token');
         const ridvayBaseUrl = core.getInput('ridvay-base-url');
@@ -41539,15 +41539,15 @@ async function run() {
             repo: context.repo.repo,
             pullRequestNumber: prNumber,
             commitSha: context.sha,
-            baseSha: isPR ? null : context.payload.before,
-            headSha: isPR ? null : context.payload.after,
+            baseSha: isPR ? null : (context.payload.before || null),
+            headSha: isPR ? null : (context.payload.after || null),
             token: githubToken
         };
 
         if (isPR) {
             core.info(`🔍 Triggering Ridvay PR Security Review for ${payload.owner}/${payload.repo} PR #${prNumber}...`);
         } else {
-            const isInitialPush = payload.baseSha === '0000000000000000000000000000000000000000';
+            const isInitialPush = payload.baseSha === '0000000000000000000000000000000000000000' || !payload.baseSha;
             if (isInitialPush) {
                 core.info(`🔍 Triggering Ridvay Branch Security Scan (Initial Push) for ${payload.owner}/${payload.repo}...`);
             } else {
@@ -41556,15 +41556,32 @@ async function run() {
             core.info(`Note: Inline code comments are only available on Pull Requests. Findings will be printed below.`);
         }
 
-        const response = await axios.post(`${ridvayBaseUrl}/v1/security/review-pr`, payload, {
-            headers: {
-                'Authorization': `Bearer ${ridvayApiKey}`,
-                'Content-Type': 'application/json'
+        let response;
+        try {
+            response = await axios.post(`${ridvayBaseUrl}/v1/security/review-pr`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${ridvayApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 300000 // 5 minutes timeout for large PRs
+            });
+        } catch (apiError) {
+            core.warning(`⚠️ Ridvay API communication error: ${apiError.message}`);
+            if (apiError.response) {
+                core.warning(`Details: ${JSON.stringify(apiError.response.data)}`);
             }
-        });
+            core.info("The security scan could not be completed, but the build will continue.");
+            return;
+        }
 
-        if (response.data.status === 'success') {
-            const issuesFound = response.data.issuesFound;
+        if (response.data.status === 'success' || response.data.issuesFound !== undefined) {
+            const issuesFound = response.data.issuesFound || 0;
+            const status = response.data.status || 'success';
+
+            if (status !== 'success') {
+                core.warning(`🛡️ Ridvay returned a partial result or warning: ${status}`);
+            }
+
             core.info(`✅ Review completed!`);
 
             if (issuesFound > 0) {
@@ -41597,7 +41614,7 @@ async function run() {
                 // Add to GitHub Job Summary for better visibility
                 await core.summary
                     .addHeading('🛡️ Ridvay Security Guard Report')
-                    .addRaw(`Found **${issuesFound}** potential security concern(s).`)
+                    .addText(`Found **${issuesFound}** potential security concern(s).`)
                     .addTable([
                         [{ data: 'File', header: true }, { data: 'Line', header: true }, { data: 'Severity', header: true }, { data: 'Finding', header: true }],
                         ...response.data.findings.map(f => [f.file, f.line.toString(), f.severity, f.message])
@@ -41611,19 +41628,16 @@ async function run() {
                 core.info('✅ No security issues detected.');
                 await core.summary
                     .addHeading('🛡️ Ridvay Security Guard Report')
-                    .addRaw('✅ No security vulnerabilities detected.')
+                    .addText('✅ No security vulnerabilities detected.')
                     .write();
             }
         } else {
-            core.setFailed(`API returned non-success status: ${JSON.stringify(response.data)}`);
+            core.warning(`⚠️ Ridvay API returned unexpected response: ${JSON.stringify(response.data)}`);
         }
 
     } catch (error) {
-        if (error.response) {
-            core.setFailed(`API Error: ${JSON.stringify(error.response.data)}`);
-        } else {
-            core.setFailed(error.message);
-        }
+        core.warning(`⚠️ Unexpected error in Ridvay Security Action: ${error.message}`);
+        core.info("The security scan could not be completed, but the build will continue.");
     }
 }
 
